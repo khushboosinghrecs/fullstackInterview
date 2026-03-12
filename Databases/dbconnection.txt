@@ -1,0 +1,65 @@
+Here’s a summary of what you did to resolve the connection issue in MongoDB Compass, what you discovered along the way, and how you ultimately got it working:
+
+---
+
+**1. Initial State ("What was not there")**
+
+- You tried to connect to `mongodb://localhost:27017/` using MongoDB Compass, but got the error:
+  ```
+  MongoNetworkError: connect ECONNREFUSED 127.0.0.1:27017
+  ```
+  This meant Compass could not connect to a running MongoDB server on your local machine.
+
+- You checked for a running MongoDB process with:
+  ```sh
+  ps aux | grep mongod
+  ```
+  At first, no `mongod` database process was running.
+
+- You tried to use `systemctl` and `telnet`, but those commands were not available on macOS. You also tried to start the server using Homebrew, but it was not installed yet.
+
+---
+
+**2. Actions Taken ("What we did")**
+
+- I guided you to install MongoDB Community Edition using Homebrew:
+  ```sh
+  brew tap mongodb/brew
+  brew install mongodb-community
+  ```
+- You started the MongoDB server process:
+  ```sh
+  brew services start mongodb-community
+  ```
+- You verified the server was running with:
+  ```sh
+  ps aux | grep mongod
+  ```
+  This time, you saw a running process, showing that the MongoDB server was up.
+
+---
+
+**3. Final State ("How it got executed and resolved")**
+
+- With the server running, you re-opened MongoDB Compass and connected to `mongodb://localhost:27017/`.
+- Now, the connection succeeded because the server process (`mongod`) was listening on port 27017—solving the original “connection refused” issue.
+
+---
+
+**Summary Table**
+
+| Step                     | Was It Present?  | Solution/Action                                            |
+|--------------------------|------------------|------------------------------------------------------------|
+| mongod running?          | ❌ (not present) | Installed and started using Homebrew                       |
+| systemctl/telnet present | ❌               | Identified as not supported on macOS                       |
+| mongod running after fix | ✅ (present)     | Verified by seeing process with `ps aux | grep mongod`     |
+| Compass connection works | ❌➔✅             | Succeeded after server was started                         |
+
+---
+
+If you need to do this again, remember:  
+1. Install MongoDB if you haven’t already.  
+2. Start the server before connecting with Compass.  
+3. Use `ps aux | grep mongod` to verify the server is running.
+
+Let me know if you have any more questions about your Compass setup!
