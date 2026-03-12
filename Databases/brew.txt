@@ -1,0 +1,46 @@
+Here’s how you can **start and stop the MongoDB server (`mongod`)** on your system using common approaches for macOS (since your previous commands and username show you’re on a Mac):
+
+---
+
+### **Starting the MongoDB Server**
+
+**If you installed MongoDB using Homebrew:**
+```sh
+brew services start mongodb-community
+```
+- This command will start MongoDB as a background service and it will automatically run when you restart your machine.
+
+**If you want to start it manually (not as a service):**
+```sh
+mongod --config /usr/local/etc/mongod.conf
+```
+- This will run the MongoDB server in the current terminal window. Keep this window open while you use Compass.
+
+---
+
+### **Stopping the MongoDB Server**
+
+**If you started MongoDB using Homebrew:**
+```sh
+brew services stop mongodb-community
+```
+- This will stop the MongoDB service and it won’t restart unless you do so manually.
+
+**If you started it manually:**  
+- Go to the terminal window running the `mongod` process and press `Ctrl + C`. This stops the server.
+
+---
+
+### **Quick Reference Table**
+
+| To...       | With Homebrew              | Manually (terminal window)         |
+|-------------|---------------------------|------------------------------------|
+| Start       | `brew services start mongodb-community` | `mongod --config /usr/local/etc/mongod.conf` |
+| Stop        | `brew services stop mongodb-community`  | Ctrl + C in the `mongod` terminal |
+
+---
+
+**Tip:**  
+Your **MongoDB Compass** GUI only needs the server running in the background (doesn’t matter how, as long as it’s running at `localhost:27017` or what your connection string specifies).
+
+Let me know if you have a different setup or see any errors while starting/stopping the server!
