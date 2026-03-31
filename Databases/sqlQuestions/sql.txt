@@ -1,0 +1,12 @@
+1. All employees
+    Select * from employee;
+
+2. Specific columns
+    select name, salary from employee;
+
+3. Where with equality
+    select * from customers where dept_id = 5;
+
+4. Where with string
+    select  * from customers where city = "new york"
+

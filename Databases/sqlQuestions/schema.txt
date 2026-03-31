@@ -1,0 +1,5 @@
+employee(id, name, salary, dept_id, hire_date, manager_id);
+departments(id, name, location)
+customer(id, name, address)
+orders(id, customer_id, order_date, total)
+order_items(order_id, product_id, quantity)
