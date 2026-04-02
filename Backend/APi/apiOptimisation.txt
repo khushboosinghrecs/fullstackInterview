@@ -1,0 +1,46 @@
+## **Phase 1: Code base optimisations**
+
+**I. Minimize Unnecessary I/O Operations**
+
+1. **Reduce Excessive I/O Calls**: Optimize database queries by fetching only required fields instead of entire records. Avoid redundant queries within loops.
+2. **Batch Processing**: Instead of making multiple small queries, use bulk operations to retrieve and process data efficiently.
+3. **Partition Large Responses**: If the response payload is too large, implement **pagination**, **chunking**, or **streaming** techniques to retrieve and return data in manageable portions.
+4. **Index Optimization**: Ensure proper indexing on frequently queried fields to reduce query execution time.
+5. **Optimize Database Queries**: Use projection to fetch only required fields, leverage aggregate pipelines where necessary, and eliminate N+1 query issues.
+
+**II. Leverage Multi-threading & Parallel Processing**
+
+1. **Parallel Execution**: Use multi-threading or asynchronous programming (e.g., Java’s CompletableFuture, ExecutorService) to process multiple tasks concurrently.
+2. **Async API Calls**: Where applicable, use non-blocking APIs like Spring WebFlux to avoid blocking operations and improve throughput.
+3. **Reduce Sequential Dependency**: Identify independent tasks that can be processed in parallel instead of sequential execution.
+4. **Thread Pool Management**: Optimize thread pool sizes to prevent resource starvation or thread exhaustion.
+
+**III. Precompute and Store Computed Data**
+
+1. **Materialized Views**: Precompute frequently used aggregates and store them in a separate collection for fast retrieval.
+2. **Denormalization**: Store computed fields within documents to reduce the need for costly joins and aggregations at runtime.
+3. **Scheduled Jobs for Heavy Processing**: Move heavy computations to scheduled batch jobs that run during off-peak hours and update precomputed data.
+4. **Event-driven Architecture**: Use message queues like Kafka/RabbitMQ to process computations asynchronously and update precomputed results.
+
+---
+
+## **Phase 2: Caching optimisations**
+
+**IV. Backend & Database Caching**
+
+1. **Application-level Caching**: Cache frequently accessed data at the application level using in-memory stores like **Redis, Memcached**.
+2. **Database Query Caching**: Use database-level caching mechanisms such as **MongoDB Aggregation Cache, PostgreSQL Materialized Views, MySQL Query Cache** (if available).
+3. **Read Replicas**: Use read replicas in database clusters to offload read traffic from the primary database.
+4. **TTL-based Cache Expiry**: Implement time-based expiration for cached data to ensure freshness.
+
+**V: Framework-Level Caching**
+
+1. **Spring Cache Abstraction**: Use Spring’s built-in caching (@Cacheable, @CachePut, @CacheEvict) with providers like Redis, EhCache, or Caffeine.
+2. **Method-Level Caching**: Cache method responses to avoid redundant computations.
+3. **Request-Level Caching**: Cache frequently accessed API responses at the controller level to avoid repeated processing.
+4. **ETag and Conditional Requests**: Implement ETag-based caching to reduce redundant API calls from clients.
+5. **Load Balancer & CDN Caching**: Use **CDN caching (Cloudflare, AWS CloudFront)** and API Gateway caching (AWS API Gateway, Nginx) to reduce backend load.
+
+**Conclusion**
+
+These five phases ensure a **progressive API optimization strategy**, starting with reducing inefficiencies at the database level, introducing concurrency, leveraging precomputed results, implementing caching at multiple levels, and ultimately optimizing at the framework level.

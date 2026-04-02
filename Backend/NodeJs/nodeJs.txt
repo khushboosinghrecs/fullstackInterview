@@ -1,0 +1,213 @@
+Here are the detailed notes from the provided video series on Advanced Node.js Internals and Concepts.
+
+### **Video 1-2: Introduction to Node.js & JavaScript Runtime**
+
+*   **Goal of Series:** To understand how Node.js works internally, not just learn its packages (like FS, HTTP, Crypto). Focus on how requests are handled internally.
+*   **How JavaScript Ran Before Node.js:**
+    *   JavaScript requires an **environment** to run.
+    *   This environment is a **JavaScript Engine** (e.g., V8 in Chrome, SpiderMonkey in Firefox).
+    *   Browsers provide this environment, converting JS code to machine code (0s and 1s).
+*   **The Birth of Node.js:**
+    *   **Question:** Can you run JavaScript outside the browser?
+    *   **2009:** Ryan Dahl took the V8 engine from Chrome and created an environment to run JS outside the browser. This was Node.js.
+    *   **Key Difference:** In the browser, JS has limitations (can't access databases, files, etc.). Node.js removes these limitations, allowing back-end development with JS.
+    *   **Official Definition:** Node.js is a JavaScript Runtime Environment.
+
+### **Video 3: What is a JavaScript Runtime & REPL**
+
+*   **Clarification:** Node.js is not a language, framework, or library. It's a runtime environment.
+*   **Node.js REPL (Read-Eval-Print Loop):**
+    *   Typing `node` in the terminal opens the REPL mode.
+    *   **R:** Reads the input.
+    *   **E:** Evaluates the code (using the V8 engine).
+    *   **P:** Prints the result.
+    *   **L:** Loops back to wait for more input.
+    *   To run a file: `node filename.js`.
+*   **`process` Object:**
+    *   Unlike the browser's `window` object, Node.js has a `global` object.
+    *   `process` is a key object inside `global`.
+    *   **`process.argv`:** Returns an array of command-line arguments.
+        *   Index 0: Path to the Node.js executable.
+        *   Index 1: Path to the JS file being executed.
+        *   Index 2 onwards: Any additional command-line arguments passed.
+    *   This allows you to pass dynamic data to your Node.js file.
+
+### **Video 4: Browser vs Node.js Runtime Differences**
+
+*   **Browser Runtime:** Provides the `window` object. Includes Web APIs like `document`, `history`, `location`, `navigator`.
+*   **Node.js Runtime:** Provides the `global` object. Includes APIs like `process`, `fs`, `path`, `crypto`.
+*   **Similarities:** Both have `console`, `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`, `URL` class.
+*   **Key Differences:**
+    *   Node.js has no `document`, `history`, `location`, or `navigator` (no DOM).
+    *   Node.js provides server-specific APIs for file system (`fs`), networking (`http`), and database access that are not available in browsers.
+
+### **Video 5: Node.js Internals - How Code is Executed**
+
+*   **Architecture Diagram:**
+    1.  **JavaScript World:** Your Node.js API code (e.g., `fs.open`, `http.createServer`). Written in JS.
+    2.  **Node.js Bindings:** Glue code written in C++ that connects the JS world to the underlying libraries.
+    3.  **C/C++ World:** `libuv` (C library) and V8 (C++). Handles asynchronous operations and interacts with the OS.
+*   **Example (`fs.open` journey):**
+    *   You call `fs.open` in your JS code.
+    *   This calls an internal `binding.open` function.
+    *   The `binding.open` implementation (in C++) calls a `uv_fs_open` function.
+    *   `uv_fs_open` is part of `libuv` (written in C).
+    *   `libuv` then interacts with the operating system to open the file.
+    *   The result returns back through the bindings to your JS callback.
+
+### **Video 6: Synchronous vs Asynchronous (Non-Blocking)**
+
+*   **Synchronous Code:** Executes line by line. The next line waits for the previous one to finish (blocking).
+*   **Asynchronous Code:** Code can be executed out of order. Non-blocking.
+*   **How Async Works (Event Loop - High Level):**
+    *   **Call Stack:** Where synchronous code executes.
+    *   **Web APIs / Node.js APIs:** Asynchronous functions (e.g., `setTimeout`, database calls) are sent here.
+    *   **Callback Queue:** When an async operation completes, its callback is placed here.
+    *   **Event Loop:** Constantly checks if the Call Stack is empty. If it is, it pushes callbacks from the Callback Queue to the Call Stack for execution.
+*   **Importance of Callbacks:** Callbacks are functions that are executed after an asynchronous operation completes. This allows Node.js to handle thousands of concurrent requests efficiently without waiting for each one to finish.
+
+### **Video 7: Threads, Thread Pool, and libuv**
+
+*   **Process vs. Threads:**
+    *   A **Process** is a container that holds your code. Running a Node.js file starts a Node.js process.
+    *   **Threads** are spawned by a process to execute code. Each thread needs a CPU core to run.
+    *   The OS scheduler manages multiple threads across fewer cores by switching rapidly.
+*   **Node.js is Single-Threaded... sort of:**
+    *   When you run a Node.js process, it spawns a **single main thread**. The V8 engine and Event Loop run on this main thread.
+    *   However, `libuv` has a **Thread Pool** (default size is 4).
+*   **Categorizing Async Operations in `libuv`:**
+    *   **Network Operations (Non-blocking):** Delegated directly to the OS kernel, which is multi-threaded.
+    *   **File System (FS) Operations:** Delegated to the **Thread Pool** because the OS doesn't provide standard non-blocking APIs for file I/O. This prevents the main thread from being blocked.
+
+### **Video 8: Phases of the Event Loop**
+
+*   The Event Loop has **six phases**, and each phase has a queue of callbacks.
+*   **Order of Execution:**
+    1.  **Timers:** Executes callbacks scheduled by `setTimeout` and `setInterval`. Node.js doesn't guarantee exact timing, only that the callback will execute *after* the specified delay.
+    2.  **Pending Callbacks (I/O Callbacks):** Executes callbacks for system errors (e.g., TCP errors) and deferred I/O from the previous cycle.
+    3.  **Idle, Prepare:** Used internally by Node.js.
+    4.  **Poll (The Heart of the Event Loop):** Retrieves new I/O events and executes their callbacks (e.g., file reads, network responses). It blocks here for new callbacks if none are pending.
+    5.  **Check:** Executes `setImmediate` callbacks. `setImmediate` callbacks run after the poll phase.
+    6.  **Close Callbacks:** Executes callbacks for closed connections (e.g., `socket.on('close')`).
+*   **One Tick:** Completing one full cycle through all six phases.
+*   **Microtask Queue (Highest Priority):**
+    *   **`process.nextTick()`:** Highest priority. Callbacks are executed immediately after the current operation, even before other phases.
+    *   **Promise callbacks (`Promise.resolve().then()`):** Second highest priority. Run after `process.nextTick()` callbacks.
+
+### **Video 9-10: Event Loop Practice Questions**
+
+*   **Question 1:**
+    ```javascript
+    console.log('Start');
+    setTimeout(() => console.log('Timeout'), 0);
+    console.log('End');
+    // Output: Start, End, Timeout
+    ```
+*   **Question 2 (Microtask Priority):**
+    ```javascript
+    console.log('Start');
+    Promise.resolve().then(() => console.log('Promise'));
+    process.nextTick(() => console.log('NextTick'));
+    console.log('End');
+    // Output: Start, End, NextTick, Promise
+    ```
+*   **Key Takeaways:**
+    *   `process.nextTick` > Promise callbacks > Timers callbacks.
+    *   The theoretical output based on the event loop phases can differ from actual execution due to how fast the poll phase processes I/O events.
+
+### **Video 11: Event Emitter Class (Observer Pattern)**
+
+*   **Official Definition:** Node.js is an **asynchronous, event-driven** JavaScript runtime.
+*   **What is Event-Driven?** Based on the **Observer Design Pattern**.
+    *   **Observer Pattern:** An `Observable` (subject) maintains a list of `Observers` (listeners). When the subject's state changes, all observers are notified automatically.
+*   **Node.js `EventEmitter` Class:**
+    *   A core class used to create and handle custom events.
+    *   **`emitter.on(eventName, callback)`:** Attaches a callback (observer) to an event (observable).
+    *   **`emitter.emit(eventName, data)`:** Triggers the event, causing all attached callbacks for that event to run.
+*   **Why it's important:** Most Node.js core APIs (like HTTP, Streams, File System) are built on this event-driven architecture.
+
+### **Video 12: HTTP and HTTPS Modules (Making Requests)**
+
+*   **Purpose:** The `http` and `https` modules allow Node.js to act as an HTTP client (making requests) or an HTTP server.
+*   **Making a Request (`http.get` vs `http.request`):**
+    *   `http.request()` provides more control and requires calling `.end()` to send the request.
+    *   `http.get()` is a simpler version for GET requests; `.end()` is not needed.
+*   **Handling Responses (Streaming & Events):**
+    *   The response arrives in **chunks** (pieces of data). This is memory-efficient, especially for large responses.
+    *   Use `response.on('data', callback)` to listen for each incoming data chunk.
+    *   Use `response.on('end', callback)` to know when the response is complete.
+*   **HTTP vs. HTTPS:** The only difference is that HTTPS adds a security (encryption) layer. Use the `https` module for secure URLs.
+
+### **Video 13: Creating an HTTP Server**
+
+*   **`http.createServer()`:** Creates an HTTP server. Takes a callback: `function (req, res)`
+    *   `req` (IncomingMessage object): Contains details about the client's request (URL, headers, method, body).
+    *   `res` (ServerResponse object): Used to send the response back to the client.
+*   **Basic Server Steps:**
+    1.  Import the `http` module.
+    2.  `const server = http.createServer((req, res) => { ... });`
+    3.  Inside the callback, write the response header `res.writeHead(200, { 'Content-Type': 'text/plain' });`
+    4.  End the response `res.end('Hello World');`
+    5.  `server.listen(port, callback);` to start the server on a specific port.
+*   **Manual Routing:** You can check `req.url` and use `if/else` or `switch` to send different responses for different endpoints.
+*   **Why Express.js?** The built-in `http` module requires manual routing, manual body parsing, and has no built-in middleware. Frameworks like Express.js build on top of `http` to solve these problems.
+
+### **Video 14: File System (fs) Module**
+
+*   **Purpose:** The `fs` module allows Node.js to interact with the system's file system (read, write, delete, create directories).
+*   **Synchronous vs. Asynchronous Methods:**
+    *   **Synchronous (e.g., `fs.readFileSync`):** Blocks the main thread. Not recommended for production apps.
+    *   **Asynchronous (e.g., `fs.readFile`):** Non-blocking. Uses a callback (can lead to callback hell) or promises.
+*   **Important `fs` Methods:**
+    *   **`fs.writeFile(file, data, callback)`:** Writes data to a file. Creates the file if it doesn't exist, **replaces** the content if it does.
+    *   **`fs.appendFile(file, data, callback)`:** Adds data to the end of a file.
+    *   **`fs.readFile(file, encoding, callback)`:** Reads the entire content of a file.
+    *   **`fs.mkdir(path, callback)`:** Creates a new directory.
+    *   **`fs.unlink(path, callback)`:** Deletes a file.
+*   **Modern Approach (`fs/promises`):**
+    *   `const fs = require('fs/promises');` allows you to use `async/await` instead of callbacks, making the code cleaner.
+*   **Streams for Large Files:**
+    *   `fs.readFile` loads the entire file into memory, which is bad for large files (e.g., 1GB+).
+    *   **`fs.createReadStream()`:** Reads a file in chunks, significantly reducing memory usage.
+    *   Listen for `'data'` events to process each chunk and the `'end'` event to know when the file is fully read.
+
+### **Video 15-16: Node.js Module System (CommonJS vs. ES Modules)**
+
+*   **What is a Module?** A reusable piece of code encapsulated in a separate file.
+*   **Why Modules?** Code organization, reusability, encapsulation (avoiding global namespace pollution).
+*   **Types of Modules:**
+    1.  **Core Modules:** Built-in (e.g., `fs`, `http`, `path`).
+    2.  **Local/Custom Modules:** Modules you create in your project.
+    3.  **External Modules:** Third-party modules installed via npm (e.g., `express`, `mongoose`).
+*   **CommonJS (CJS) Modules:**
+    *   **Default module system in Node.js.**
+    *   **Syntax:**
+        *   Export: `module.exports = { func1, func2 };` or `exports.func1 = func1;`
+        *   Import: `const myModule = require('./myModule.js');`
+    *   **Characteristics:**
+        *   **Synchronous loading** (blocks until module is loaded).
+        *   **Dynamic** (can use `require()` inside `if` statements).
+        *   Designed for servers (works out of the box in Node.js).
+*   **ES Modules (ESM) - `import` / `export`:**
+    *   **Standard JavaScript module system.**
+    *   **How to use:** Set `"type": "module"` in `package.json` or use `.mjs` file extension.
+    *   **Syntax:**
+        *   Named Export: `export const add = (a, b) => a + b;`
+        *   Default Export: `export default subtract;`
+        *   Import: `import add, { multiply } from './math.mjs';`
+    *   **Characteristics:**
+        *   **Asynchronous loading**.
+        *   **Static** (`import` statements must be at the top level).
+        *   Supports **Tree Shaking** (removing unused code during build).
+        *   Works natively in modern browsers.
+
+### **Video 17: Module Caching**
+
+*   **Core Concept:** `require()` and `import` cache modules.
+*   **How it works:**
+    *   When a module is loaded for the first time, Node.js executes its code, stores the `exports` object, and caches it.
+    *   If the same module is `require`d or `import`ed again from any file, Node.js returns the cached `exports` object without re-executing the module's code.
+*   **Why is this important?**
+    *   **Performance:** Avoids reloading and re-parsing the same module multiple times.
+    *   **Singleton Pattern:** The module's state is shared across all imports. If you modify a module's internal state, all other imports will see the change.
+*   **Proof:** If you add a `console.log('Module loaded');` inside a module and import it twice, the log will print only once.

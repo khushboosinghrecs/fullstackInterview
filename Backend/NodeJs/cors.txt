@@ -1,0 +1,266 @@
+### Q1: What is CORS? Why does it exist?
+
+**Answer:**
+CORS stands for **Cross-Origin Resource Sharing**. It is a **browser security policy** that restricts web pages from making requests to a different domain than the one that served the web page.
+
+**Why it exists:**
+- To prevent **malicious websites** from accessing sensitive data from another site without permission
+- It's a **security mechanism** implemented by browsers, not by servers
+- Without CORS, any website could make requests to any other website (like your bank) while you're logged in
+
+**Key point:** The browser blocks the response, not the request. The request may reach the server, but the browser refuses to give the response to the client JavaScript.
+
+---
+
+### Q2: What causes a CORS error? Give a real example.
+
+**Answer:**
+A CORS error occurs when the **origin** of the request is different from the **origin** of the server.
+
+**Example from the transcript:**
+
+| Component | URL | Origin |
+|-----------|-----|--------|
+| Client (Frontend) | `http://127.0.0.1:5500` | `http://127.0.0.1:5500` |
+| Server (Backend) | `http://localhost:3000` | `http://localhost:3000` |
+
+Even though `127.0.0.1` and `localhost` point to the same machine, browsers consider them **different origins** because:
+- The domain names are different strings
+- The ports are different (5500 vs 3000)
+
+**Typical error message:**
+```
+Access to fetch at 'http://localhost:3000/data' from origin 'http://127.0.0.1:5500' 
+has been blocked by CORS policy. No 'Access-Control-Allow-Origin' header is present 
+on the requested resource.
+```
+
+---
+
+### Q3: What is an "origin" in CORS?
+
+**Answer:**
+An **origin** is defined by three components:
+
+```
+origin = protocol + domain + port
+```
+
+**Examples:**
+| URL | Origin |
+|-----|--------|
+| `http://example.com:80/page` | `http://example.com:80` |
+| `https://api.example.com:443/data` | `https://api.example.com:443` |
+| `http://localhost:3000/users` | `http://localhost:3000` |
+
+**When are origins considered different?**
+- Different protocols: `http://example.com` vs `https://example.com`
+- Different domains: `example.com` vs `api.example.com`
+- Different ports: `localhost:3000` vs `localhost:5500`
+
+---
+
+### Q4: How do you fix a CORS error?
+
+**Answer:**
+CORS must be **fixed on the server-side**, not the client-side. The server needs to include specific headers in its response.
+
+**Solution 1: Allow specific origin (Node.js/Express)**
+```javascript
+const cors = require('cors');
+
+app.use(cors({
+  origin: 'http://127.0.0.1:5500'  // Allow only this origin
+}));
+```
+
+**Solution 2: Allow multiple origins**
+```javascript
+app.use(cors({
+  origin: ['http://127.0.0.1:5500', 'http://localhost:5500', 'https://mywebsite.com']
+}));
+```
+
+**Solution 3: Allow all origins (for public APIs)**
+```javascript
+app.use(cors({
+  origin: '*'
+}));
+
+// Or simply
+app.use(cors());
+```
+
+**Solution 4: Manual header setting**
+```javascript
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:5500');
+  next();
+});
+```
+
+---
+
+### Q5: What are the important CORS headers?
+
+**Answer:**
+
+| Header | Purpose | Example |
+|--------|---------|---------|
+| `Access-Control-Allow-Origin` | Specifies which origins are allowed | `http://127.0.0.1:5500` or `*` |
+| `Access-Control-Allow-Methods` | Specifies which HTTP methods are allowed | `GET, POST, PUT, DELETE` |
+| `Access-Control-Allow-Headers` | Specifies which headers can be used | `Content-Type, Authorization` |
+| `Access-Control-Allow-Credentials` | Allows cookies/auth headers | `true` |
+| `Access-Control-Max-Age` | How long pre-flight response can be cached | `86400` (24 hours) |
+
+**Example with all headers:**
+```javascript
+app.use(cors({
+  origin: 'http://127.0.0.1:5500',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400
+}));
+```
+
+---
+
+### Q6: What is a pre-flight request? When does it happen?
+
+**Answer:**
+A **pre-flight request** is an `OPTIONS` request that the browser sends **automatically** before the actual request to check if the server allows the cross-origin request.
+
+**When does pre-flight happen?**
+Pre-flight is triggered for requests that are **not simple requests**.
+
+**Simple requests (no pre-flight):**
+- Methods: `GET`, `POST`, `HEAD`
+- Headers: Only `Accept`, `Accept-Language`, `Content-Language`, `Content-Type` (with values `text/plain`, `multipart/form-data`, `application/x-www-form-urlencoded`)
+
+**Requests that trigger pre-flight:**
+- Methods other than GET/POST/HEAD (e.g., `PUT`, `DELETE`, `PATCH`)
+- Custom headers (e.g., `Authorization`, `X-Custom-Header`)
+- `Content-Type: application/json`
+
+**How pre-flight works:**
+```
+    Browser: "Hey server, can I send a PUT request from origin 127.0.0.1:5500?"
+    Browser sends OPTIONS request
+
+    Server: "Yes, I allow PUT, POST, GET methods from that origin"
+    Server responds with CORS headers
+
+    Browser: "Great, now sending the actual PUT request"
+    Browser sends actual request
+```
+
+**Network tab observation:**
+    - You'll see **two requests** for a single action
+    - First: `OPTIONS` request (pre-flight)
+    - Second: Actual request (PUT/DELETE/etc.)
+
+---
+
+### Q7: How do you configure allowed methods in CORS?
+
+    ```javascript
+    const cors = require('cors');
+
+    // Allow only GET and POST (PUT will be blocked)
+    app.use(cors({
+    origin: 'http://127.0.0.1:5500',
+    methods: ['GET', 'POST']  // PUT, DELETE will fail pre-flight
+    }));
+    ```
+
+**Error when method not allowed:**
+    ```
+    Access to fetch at 'http://localhost:3000/data' from origin 'http://127.0.0.1:5500' 
+    has been blocked by CORS policy. Method PUT is not allowed by 
+    Access-Control-Allow-Methods in pre-flight response.
+    ```
+
+---
+
+### Q8: What's the difference between CORS in development vs production?
+
+    | Environment | CORS Configuration | Reason |
+    |-------------|-------------------|--------|
+    | **Development** | `origin: '*'` or specific local URLs | Easy testing, multiple local servers |
+    | **Production** | Specific domain(s) only | Security - don't allow unknown origins |
+
+    **Development example:**
+    ```javascript
+    if (process.env.NODE_ENV === 'development') {
+    app.use(cors({ origin: '*' }));
+    }
+    ```
+
+    **Production example:**
+    ```javascript
+    app.use(cors({
+    origin: ['https://myapp.com', 'https://admin.myapp.com'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+    }));
+    ```
+
+### Q9: Can CORS be fixed on the client-side?
+
+    **Answer:**
+    **No, CORS cannot be fixed on the client-side.** CORS is a browser security policy that requires server cooperation.
+
+    **What doesn't work:**
+    - Changing client-side JavaScript
+    - Using fetch options (they don't bypass CORS)
+    - Adding headers in client code (browser blocks them for cross-origin)
+
+    **Workarounds (not fixes):**
+    1. **Proxy server** - Route requests through your own server
+    2. **Browser extension** - Disable CORS (development only)
+    3. **Mode: 'no-cors'** - Only works for limited use cases
+
+    **Proxy example:**
+    ```javascript
+    // Instead of calling API directly, call your proxy
+    fetch('/api/proxy?url=http://external-api.com/data')
+    ```
+
+### Q10: How does CORS work with credentials (cookies, auth headers)?
+
+    **Answer:**
+    By default, cross-origin requests do **not** send cookies or authorization headers.
+
+    **To allow credentials:**
+    ```javascript
+    // Server side
+    app.use(cors({
+    origin: 'http://127.0.0.1:5500',
+    credentials: true  // Allow cookies/auth headers
+    }));
+
+    // Client side
+    fetch('http://localhost:3000/data', {
+    credentials: 'include'  // Send cookies
+    });
+```
+
+**Important restrictions:**
+- When `credentials: true`, you **cannot** use `origin: '*'`
+- Must specify exact origin
+
+---
+
+### Quick Interview Summary Table
+
+| Question | Short Answer |
+|----------|--------------|
+| What is CORS? | Browser security policy that blocks cross-origin requests |
+| Who fixes CORS? | Server-side developer |
+| Main header? | `Access-Control-Allow-Origin` |
+| What is pre-flight? | OPTIONS request sent before non-simple requests |
+| What methods trigger pre-flight? | PUT, DELETE, PATCH (anything not GET/POST/HEAD) |
+| Can client fix CORS? | No |
+| Development config? | `origin: '*'` |
+| Production config? | Specific domain(s) only |
