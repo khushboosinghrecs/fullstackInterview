@@ -1,0 +1,88 @@
+Your query:
+
+```sql
+SELECT department, AVG(salary)
+FROM (
+    SELECT department, salary
+    FROM employees
+) AS temp
+GROUP BY department;
+```
+
+### What the Query Does
+
+1. The **subquery**:
+
+   ```sql
+   SELECT department, salary FROM employees
+   ```
+
+   simply returns the `department` and `salary` columns from the `employees` table.
+
+2. This result is treated as a **temporary table called `temp`**.
+
+3. The outer query then:
+
+   * **Groups rows by department**
+   * **Calculates the average salary for each department**
+
+---
+
+# Example Data
+
+### employees table
+
+| name  | department | salary |
+| ----- | ---------- | ------ |
+| Alice | HR         | 50000  |
+| Bob   | HR         | 60000  |
+| John  | IT         | 70000  |
+| Neha  | IT         | 80000  |
+| Ravi  | Sales      | 40000  |
+
+---
+
+# Result
+
+| department | AVG(salary) |
+| ---------- | ----------- |
+| HR         | 55000       |
+| IT         | 75000       |
+| Sales      | 40000       |
+
+---
+
+### Important Observation
+
+In this case, **the subquery is unnecessary** because it returns the same data as the original table.
+
+You could simply write:
+
+```sql
+SELECT department, AVG(salary)
+FROM employees
+GROUP BY department;
+```
+
+Both queries will produce **the same result**.
+
+---
+
+💡 **When subqueries in `FROM` are actually useful**
+
+They become useful when you need to:
+
+* filter data first
+* compute derived columns
+* aggregate before grouping again
+
+Example:
+
+```sql
+SELECT department, AVG(adjusted_salary)
+FROM (
+    SELECT department, salary * 1.1 AS adjusted_salary
+    FROM employees
+) temp
+GROUP BY department;
+```

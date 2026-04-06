@@ -1,0 +1,58 @@
+If you **do not handle `NULL` values** in the expression:
+
+```sql
+UnitPrice * (UnitsInStock + UnitsOnOrder)
+```
+
+then **the result will be `NULL` if any of the values is `NULL`.**
+
+---
+
+## Why this happens
+
+In SQL arithmetic operations:
+
+```text
+Any calculation with NULL → result becomes NULL
+```
+
+Because `NULL` means **unknown value**.
+
+---
+
+## Example
+
+| UnitPrice | UnitsInStock | UnitsOnOrder | Expression Result |
+| --------- | ------------ | ------------ | ----------------- |
+| 10        | 5            | 2            | 70                |
+| 10        | 5            | NULL         | NULL              |
+| 10        | NULL         | 3            | NULL              |
+
+Example calculation:
+
+```text
+10 * (5 + NULL)
+= 10 * NULL
+= NULL
+```
+
+---
+
+## How to Fix It
+
+Use `IFNULL()` or `COALESCE()`.
+
+### Example
+
+```sql
+SELECT UnitPrice * (IFNULL(UnitsInStock,0) + IFNULL(UnitsOnOrder,0)) AS TotalValue
+FROM Products;
+```
+
+Now `NULL` values are treated as **0**.
+
+---
+
+✅ **Final Answer**
+
+If `NULL` values are not handled, the **entire expression will return `NULL` whenever any value involved in the calculation is `NULL`.**

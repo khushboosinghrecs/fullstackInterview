@@ -1,0 +1,165 @@
+**Set operations in SQL** are used to **combine the results of two or more SELECT queries**.
+
+The main set operations are:
+
+| Operation             | Purpose                                     |
+| --------------------- | ------------------------------------------- |
+| **UNION**             | Combines results and removes duplicates     |
+| **UNION ALL**         | Combines results and keeps duplicates       |
+| **INTERSECT**         | Returns only common rows                    |
+| **EXCEPT** (or MINUS) | Returns rows from first query not in second |
+
+---
+
+# 1️⃣ UNION
+
+Combines rows from two queries **without duplicates**.
+
+### Example Tables
+
+**students_2023**
+
+| name  |
+| ----- |
+| Alice |
+| Bob   |
+
+**students_2024**
+
+| name |
+| ---- |
+| Bob  |
+| John |
+
+### Query
+
+```sql
+SELECT name FROM students_2023
+UNION
+SELECT name FROM students_2024;
+```
+
+### Result
+
+| name  |
+| ----- |
+| Alice |
+| Bob   |
+| John  |
+
+✔ Duplicate **Bob** appears only once.
+
+---
+
+# 2️⃣ UNION ALL
+
+Combines rows **including duplicates**.
+
+```sql
+SELECT name FROM students_2023
+UNION ALL
+SELECT name FROM students_2024;
+```
+
+### Result
+
+| name  |
+| ----- |
+| Alice |
+| Bob   |
+| Bob   |
+| John  |
+
+✔ Faster because it does **not remove duplicates**.
+
+---
+
+# 3️⃣ INTERSECT
+
+Returns rows **present in both queries**.
+
+```sql
+SELECT name FROM students_2023
+INTERSECT
+SELECT name FROM students_2024;
+```
+
+### Result
+
+| name |
+| ---- |
+| Bob  |
+
+✔ Only the common value.
+
+---
+
+# 4️⃣ EXCEPT (or MINUS)
+
+Returns rows **present in first query but not in second**.
+
+```sql
+SELECT name FROM students_2023
+EXCEPT
+SELECT name FROM students_2024;
+```
+
+### Result
+
+| name  |
+| ----- |
+| Alice |
+
+✔ Alice is only in **students_2023**.
+
+---
+
+# 🧠 Important Rules for Set Operations
+
+1. Both queries must have **same number of columns**.
+2. Columns must have **compatible data types**.
+3. Column names in result come from the **first query**.
+
+Example valid structure:
+
+```sql
+SELECT column1, column2
+FROM table1
+
+UNION
+
+SELECT column1, column2
+FROM table2;
+```
+
+---
+
+# 📊 Visual Idea
+
+```
+Table A:        Table B:
+
+Alice           Bob
+Bob             John
+```
+
+| Operation | Result                |
+| --------- | --------------------- |
+| UNION     | Alice, Bob, John      |
+| UNION ALL | Alice, Bob, Bob, John |
+| INTERSECT | Bob                   |
+| EXCEPT    | Alice                 |
+
+---
+
+✅ **Quick memory trick**
+
+```
+UNION → combine
+INTERSECT → common
+EXCEPT → difference
+```
+
+---
+
+If you want, I can also explain **SQL JOIN vs UNION (a very common interview question)** with examples.

@@ -1,0 +1,157 @@
+Here are **common SQL operations on columns with simple examples**.
+
+---
+
+# 1️⃣ Arithmetic Operation (Math on Columns)
+
+You can perform calculations between columns.
+
+### Example Table: `orders`
+
+| product | price | quantity |
+| ------- | ----- | -------- |
+| Laptop  | 800   | 2        |
+| Phone   | 500   | 3        |
+
+### Query
+
+```sql
+SELECT product, price * quantity AS total_price
+FROM orders;
+```
+
+### Result
+
+| product | total_price |
+| ------- | ----------- |
+| Laptop  | 1600        |
+| Phone   | 1500        |
+
+✔ Here `price * quantity` is an operation on two columns.
+
+---
+
+# 2️⃣ Aggregate Operation
+
+Used to calculate values across rows.
+
+### Query
+
+```sql
+SELECT AVG(price) AS average_price
+FROM orders;
+```
+
+### Result
+
+| average_price |
+| ------------- |
+| 650           |
+
+✔ `AVG()` performs an operation on the **price column**.
+
+---
+
+# 3️⃣ String Operation
+
+Works with text columns.
+
+### Example Table: `employees`
+
+| first_name | last_name |
+| ---------- | --------- |
+| John       | Smith     |
+| Anna       | Brown     |
+
+### Query
+
+```sql
+SELECT CONCAT(first_name, ' ', last_name) AS full_name
+FROM employees;
+```
+
+### Result
+
+| full_name  |
+| ---------- |
+| John Smith |
+| Anna Brown |
+
+✔ Combines two text columns.
+
+---
+
+# 4️⃣ Conditional Operation
+
+Using `CASE` to apply logic.
+
+### Example Table: `employees`
+
+| name | salary |
+| ---- | ------ |
+| John | 70000  |
+| Anna | 40000  |
+
+### Query
+
+```sql
+SELECT name,
+CASE
+  WHEN salary > 50000 THEN 'High Salary'
+  ELSE 'Low Salary'
+END AS salary_category
+FROM employees;
+```
+
+### Result
+
+| name | salary_category |
+| ---- | --------------- |
+| John | High Salary     |
+| Anna | Low Salary      |
+
+✔ Applies logic on the `salary` column.
+
+---
+
+# 5️⃣ Numeric Operation
+
+Using numeric functions.
+
+### Example Table: `city`
+
+| name  | population |
+| ----- | ---------- |
+| CityA | 123456     |
+| CityB | 987654     |
+
+### Query
+
+```sql
+SELECT FLOOR(AVG(population)) AS avg_population
+FROM city;
+```
+
+### Result
+
+| avg_population |
+| -------------- |
+| 555555         |
+
+✔ `FLOOR()` rounds the average value down.
+
+---
+
+# 🧠 Quick Summary
+
+| Operation Type | Example                    |
+| -------------- | -------------------------- |
+| Arithmetic     | `price * quantity`         |
+| Aggregate      | `AVG(price)`               |
+| String         | `CONCAT(first, last)`      |
+| Conditional    | `CASE WHEN salary > 50000` |
+| Numeric        | `FLOOR(AVG(population))`   |
+
+---
+
+If you'd like, I can also show **10 SQL column operations that appear in HackerRank SQL challenges**, which will help you solve problems faster.

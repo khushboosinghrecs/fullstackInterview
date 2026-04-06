@@ -1,0 +1,92 @@
+### SQL `ALTER` Statement
+
+The **`ALTER` statement** is used to **modify the structure of an existing table** in a database.
+
+You can use it to:
+
+* Add a column
+* Delete a column
+* Modify a column
+* Rename a column or table (depending on SQL system)
+
+---
+
+# 1. Add a Column
+
+```sql
+ALTER TABLE Customers
+ADD Email VARCHAR(100);
+```
+
+Result: A new column **Email** is added to the `Customers` table.
+
+---
+
+# 2. Delete a Column
+
+```sql
+ALTER TABLE Customers
+DROP COLUMN Email;
+```
+
+Result: The **Email column is removed**.
+
+---
+
+# 3. Modify a Column
+
+(MySQL example)
+
+```sql
+ALTER TABLE Customers
+MODIFY Email VARCHAR(200);
+```
+
+Result: Changes the size of the **Email column**.
+
+(SQL Server uses `ALTER COLUMN` instead)
+
+```sql
+ALTER TABLE Customers
+ALTER COLUMN Email VARCHAR(200);
+```
+
+---
+
+# 4. Rename a Column (MySQL)
+
+```sql
+ALTER TABLE Customers
+CHANGE Email CustomerEmail VARCHAR(200);
+```
+
+---
+
+# Example Table
+
+Before:
+
+| CustomerID | Name  |
+| ---------- | ----- |
+| 1          | Rahul |
+| 2          | Neha  |
+
+After running:
+
+```sql
+ALTER TABLE Customers
+ADD City VARCHAR(50);
+```
+
+Table becomes:
+
+| CustomerID | Name  | City |
+| ---------- | ----- | ---- |
+| 1          | Rahul | NULL |
+| 2          | Neha  | NULL |
+
+---
+
+✅ **Simple Definition**
+
+`ALTER` is used to **change the structure of an existing table**.

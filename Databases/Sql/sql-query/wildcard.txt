@@ -1,0 +1,9 @@
+| Wildcard | Meaning                  |
+| -------- | ------------------------ |
+| `%`      | Any number of characters |
+| `_`      | One character            |
+| `[A-Z]`  | Range of characters      |
+| `[^A-Z]` | Not in range             |
+
+
+The BETWEEN operator is used to filter records within a specified range of values (inclusive).

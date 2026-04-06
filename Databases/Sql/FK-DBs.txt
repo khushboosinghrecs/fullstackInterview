@@ -1,0 +1,122 @@
+Theoritical ->
+
+How our table store in DB , which Datascture?
+How does indexing works internally?
+How key value pair is decided in redis in backend?
+
+
+Max api second -> data load -> 30sec
+good api -> page loading -> maxx 1 sec
+
+
+FOREIGN KEY CONCEPT IN SQL vs NoSQL
+=====================================
+
+PART 1: THE FOREIGN KEY IN SQL (RELATIONAL DATABASES)
+-------------------------------------------------------
+    - The Core Rule (Referential Integrity): You cannot have a value in the foreign key column unless that exact value already exists in the primary key column of the
+     referenced table.
+
+    SQL Example:
+
+        -- The "Parent" table
+        CREATE TABLE Customers (
+            CustomerID INT PRIMARY KEY,
+            Name VARCHAR(100)
+        );
+
+        -- The "Child" table with a FOREIGN KEY constraint
+        CREATE TABLE Orders (
+            OrderID INT PRIMARY KEY,
+            OrderDate DATE,
+            CustomerID INT, -- This is the Foreign Key
+            FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+        );
+
+Key Properties of SQL Foreign Keys:
+    1. Enforcement/Constraint: The database engine strictly enforces the relationship.
+        - You cannot insert Order with CustomerID=999 if no customer with that ID exists.
+        - You cannot delete a Customer who still has any Orders in the system (unless you use ON DELETE CASCADE).
+    2. Data Integrity: Guarantees no "orphan records." Every order belongs to a valid customer.
+    3. ACID Compliance: Crucial for transactional systems (e.g., banking, e-commerce checkout) where data consistency is non-negotiable.
+    4. Joins: The foreign key relationship enables powerful JOIN operations to combine data from multiple tables on the fly.
+
+
+PART 2: THE "FOREIGN KEY" CONCEPT IN NoSQL
+--------------------------------------------
+    NoSQL databases (like MongoDB, Cassandra, DynamoDB) are NON-RELATIONAL. They generally do NOT have foreign key constraints enforced by the database engine.
+    The Core Difference: In NoSQL, the "APPLICATION CODE" is responsible for maintaining data relationships. The database trusts you.
+
+    APPROACH 1: EMBEDDING (Denormalization - The Most NoSQL Way)
+        You store related data INSIDE the parent document/record.
+
+        MongoDB Example (Embedding):
+            {
+                "CustomerID": 123,
+                "Name": "Alice Smith",
+                "orders": [
+                    { "OrderID": 1001, "Date": "2024-01-15", "Total": 150.00 },
+                    { "OrderID": 1002, "Date": "2024-02-20", "Total": 89.99 }
+                ]
+            }
+
+    Pros: Super fast read. One query gets the customer AND all orders. No "join" needed.
+    Cons: Data duplication. Difficult to update nested data. Size limits (e.g., MongoDB document max 16MB).
+
+APPROACH 2: REFERENCING (Manual "Foreign Key")
+    You store the ID of the related data, just like SQL, but NO constraint is enforced.
+    
+    MongoDB Example (Referencing):
+        // Document 1: Customer
+        { "_id": 123, "Name": "Alice Smith" }
+
+        // Document 2: Order (stores the "foreign key" manually)
+        { "_id": 1001, "Date": "2024-01-15", "CustomerID": 123 }
+        { "_id": 1002, "Date": "2024-02-20", "CustomerID": 123 }
+
+    Pros: Avoids data duplication. No document size limit issues.
+    Cons: 
+        Requires two queries :: 2 I/O calls means increase latency. 
+        No referential integrity - you can delete Customer 123, and Order 1001 becomes an orphan.
+
+HOW DIFFERENT NoSQL DATABASES HANDLE THIS
+------------------------------------------
+    | Database          | Native FK Constraint? | How You Manage Relationships                          |
+    |-------------------|----------------------|-------------------------------------------------------|
+    | MongoDB (Document) | No                   | Embedding or manual referencing. Offers $lookup.      |
+    | Cassandra (Wide)   | No                   | Denormalization. Joins impossible. App manages dupes. |
+    | DynamoDB (KV/Doc)  | No                   | Single-table design with embedded objects.            |
+    | Redis (Key-Value)  | No                   | Custom app logic. Store IDs in Sets or Lists.         |
+    | Neo4j (Graph)      | Yes (via Relations)  | Relationships are first-class citizens.               |
+
+
+THE KEY TRADE-OFFS: SQL vs. NoSQL
+----------------------------------
+    | Feature                 | SQL (FK Constraint)          | NoSQL (Manual Relationship)          | Remarks
+    |-------------------------|------------------------------|--------------------------------------|
+    | Data Integrity          | Guaranteed by database       | Your app's responsibility            | Validations are done not in NoSQL Db but in implemented code, One Db shouldn't be utilised in multiple codebases creating a monolythic env.
+    | Write Speed             | Slower (must check other table) | Faster (no checking)              | We are talking about usecase write not a single table write capability
+    | Read Speed (Simple)     | Slower (requires JOIN)       | Faster (all data in one document)    | 
+    | Flexibility             | Rigid schema                 | Flexible schema                      |
+    | Complex Transactions    | Excellent (ACID across tables) | Limited (single-document atomicity) |
+    | Best For                | Banking, ERP, E-commerce      | Blogs, Catalogs, IoT, Real-time feeds|
+
+
+SIMPLE RULE OF THUMB
+---------------------
+    - If the relationship is STRONG and integrity is CRITICAL (e.g., Orders must have a valid Customer), use an SQL foreign key.
+    - If the relationship is LOOSE, or you prioritize READ SPEED (Availability) & SCALABILITY (e.g., User LIKES a Post), NoSQL embedding or referencing is fine. Just handle orphan checks in your application logic.
+
+
+REAL-WORLD EXAMPLE: AN E-COMMERCE APP
+    --------------------------------------
+    - SQL for Inventory/Cart/Checkout: Use foreign keys between Orders, Customers, Products, Payments. You cannot afford an order with an invalid product ID.
+    - NoSQL for Product Reviews / User Activity: A User document embeds their last 10 Reviews. A review referencing a deleted product is not critical. Your app just shows "[deleted]".
+
+
+SUMMARY
+--------
+    NoSQL databases lack ENFORCED foreign key constraints, NOT the concept of relating data. 
+    They trade strict integrity for speed, flexibility, and scale, forcing the developer to manage relationships via embedding or manual references.
+    Choose SQL when you need the database to guarantee correctness; choose NoSQL when you need raw speed and massive scale and can move that responsibility to your application.
+

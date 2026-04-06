@@ -1,0 +1,96 @@
+Here is a **simple example using both `WHERE` and `HAVING` together**.
+
+---
+
+## Table: `Employees`
+
+| ID | Department | Salary |
+| -- | ---------- | ------ |
+| 1  | IT         | 60000  |
+| 2  | IT         | 50000  |
+| 3  | HR         | 40000  |
+| 4  | HR         | 30000  |
+| 5  | Sales      | 70000  |
+| 6  | Sales      | 20000  |
+
+---
+
+## Query using **WHERE + GROUP BY + HAVING**
+
+```sql
+SELECT Department, AVG(Salary) AS AvgSalary
+FROM Employees
+WHERE Salary > 30000
+GROUP BY Department
+HAVING AVG(Salary) > 50000;
+```
+
+---
+
+## Step-by-step explanation
+
+### 1️⃣ `WHERE Salary > 30000`
+
+First, SQL filters rows **before grouping**.
+
+Remaining rows:
+
+| ID | Department | Salary |
+| -- | ---------- | ------ |
+| 1  | IT         | 60000  |
+| 2  | IT         | 50000  |
+| 3  | HR         | 40000  |
+| 5  | Sales      | 70000  |
+
+---
+
+### 2️⃣ `GROUP BY Department`
+
+Now rows are grouped by department.
+
+| Department | Salaries     |
+| ---------- | ------------ |
+| IT         | 60000, 50000 |
+| HR         | 40000        |
+| Sales      | 70000        |
+
+---
+
+### 3️⃣ `HAVING AVG(Salary) > 50000`
+
+Filter groups **after aggregation**.
+
+Average salaries:
+
+| Department | AvgSalary |
+| ---------- | --------- |
+| IT         | 55000     |
+| HR         | 40000     |
+| Sales      | 70000     |
+
+Final result:
+
+| Department | AvgSalary |
+| ---------- | --------- |
+| IT         | 55000     |
+| Sales      | 70000     |
+
+---
+
+✅ **Key Difference**
+
+| Clause   | When Used         | Purpose                 |
+| -------- | ----------------- | ----------------------- |
+| `WHERE`  | Before `GROUP BY` | Filters rows            |
+| `HAVING` | After `GROUP BY`  | Filters grouped results |
+
+---
+
+💡 **Easy way to remember**
+
+```
+WHERE → filters rows
+HAVING → filters groups
+```
+
+---

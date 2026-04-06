@@ -1,0 +1,119 @@
+DOMAIN / USE CASE          | BEST DB TYPE | SPECIFIC EXAMPLES            | WHY? (The Deciding Factor)
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+BANKING / FINTECH          |              |                              |
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+  - Ledger (Account Bal)   | SQL (Strong) | PostgreSQL, Oracle, Db2      | MUST have ACID. If $100 leaves A, it MUST arrive at B. No exceptions. Foreign keys critical.
+  - Transaction History    | SQL          | Same as above                | Needs strict serializability and audit trails.
+  - Fraud Detection        | NoSQL (Graph) | Neo4j, Amazon Neptune        | Needs to traverse relationships fast (e.g., "find accounts 2 hops from this scammer").
+  - Real-time Payments     | SQL + Cache  | CockroachDB, Yugabyte + Redis| Needs SQL guarantees but horizontal scaling. Cache for speed.
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+HEALTHCARE                 |              |                              |
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+  - Patient Records (EMR)  | SQL          | PostgreSQL, SQL Server       | Complex joins (Patient -> Visits -> Diagnoses -> Meds). Strong referential integrity.
+  - Medical Imaging (Xray) | NoSQL (Obj)  | MongoDB, MinIO (S3)          | Files are huge (50MB-1GB). SQL is terrible at storing blobs.
+  - Real-time Monitoring   | Time-Series  | InfluxDB, TimescaleDB        | ICU vitals (HR, BP) come every second. Need high write throughput.
+  - Clinical Trials        | SQL          | Oracle, PostgreSQL           | Data must be immutable, auditable, and regulatory compliant (FDA, GDPR).
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+ECOMMERCE                  |              |                              |
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+  - Shopping Cart          | NoSQL (KV)   | Redis                        | Needs TTL (expire after 24h). Needs <1ms latency for "Add to Cart".
+  - Inventory Management   | SQL          | PostgreSQL, MySQL            | Must prevent overselling. "UPDATE inventory SET qty=qty-1 WHERE id=5 AND qty>0" needs atomicity.
+  - Order Checkout         | SQL (ACID)   | PostgreSQL, YugabyteDB       | Cannot lose money. Needs foreign keys (Order -> Payment -> Shipping).
+  - Product Catalog        | NoSQL (Doc)  | MongoDB, Elasticsearch       | Products have varying attributes (TV has size, Shirt has size/color). Schema-less is perfect.
+  - Search                 | Search Engine| Elasticsearch, Typesense     | Users need fuzzy search, typo tolerance, faceted navigation.
+  - User Sessions / Cache  | NoSQL (KV)   | Redis, Memcached             | High throughput, low latency, data can be lost.
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+TRADING / STOCK EXCHANGE   |              |                              |
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+  - Order Book (Buy/Sell)  | In-Memory SQL| kdb+, VoltDB, Aerospike      | Must process 1M+ orders/sec with microsecond latency. Disk is too slow.
+  - Historical Trade Data  | Time-Series  | InfluxDB, ClickHouse         | Storing years of tick data for backtesting. High compression ratio.
+  - Risk Management        | SQL          | PostgreSQL, Oracle           | Calculating portfolio risk (Greeks, VaR). Needs complex joins and transactions.
+  - Position Keeping       | SQL (Strong) | Same as above                | "Buy 100 AAPL" -> Position = +100. Cannot double count. ACID mandatory.
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+MICROSERVICES             |              |                              |
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+  - Per Service (General)  | Polyglot     | Depends on service           | Each microservice picks its OWN best DB. No shared database between services.
+  - Order Service          | SQL          | PostgreSQL                   | Needs strong consistency.
+  - Review Service         | NoSQL (Doc)  | MongoDB                      | Low criticality, high write volume.
+  - Session Service        | NoSQL (KV)   | Redis                        | Fast, ephemeral.
+  - Reporting/Analytics    | Columnar     | ClickHouse, Redshift         | Reading millions of rows, aggregating.
+  - SAGA/Transaction Log   | Event Store  | Kafka, EventStoreDB          | Storing events for choreography.
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+PRODUCTIVITY APPS (Word, Excel, Adobe)
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+  - User Documents (Blobs) | NoSQL (Obj)  | AWS S3, Azure Blob, MinIO    | Files can be 100MB+. Object storage is $0.01/GB vs $100/GB for SQL.
+  - Collaboration (Live)   | NoSQL (KV)   | Redis, DynamoDB              | Google Docs style: needs OT/CRDT. Millions of concurrent connections.
+  - Metadata (File list)   | SQL          | PostgreSQL, MySQL            | "Show all .pdf files modified last week" needs filtering, sorting, indexing.
+  - Version History        | NoSQL (Doc)  | MongoDB                      | Storing diffs. Each version is a document. No complex relationships.
+  - License Management     | SQL          | PostgreSQL                   | "Does user 123 have license for Photoshop?" Needs joins (User -> License -> Product).
+  - Real-time Cursors      | NoSQL (KV)   | Redis                        | Tracking who is editing which paragraph right now. Ephemeral data.
+---------------------------|--------------|------------------------------|-------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+The Golden Rule (For Copying)
+Here is the decision matrix as simple bullet points:
+
+Use SQL (PostgreSQL, MySQL, Oracle) when:
+MONEY is involved (banking, trading, checkout)
+
+HEALTH & SAFETY (patient records, prescriptions)
+
+You need FOREIGN KEYS (prevent orphans)
+
+You need ACID transactions (all or nothing)
+
+Complex queries with JOINs (reporting across 5+ tables)
+
+Use NoSQL when:
+Speed > Consistency (shopping cart, caching)
+
+Schema is unpredictable (product catalog with varying attributes)
+
+Massive scale (millions of writes/sec)
+
+Data is temporary (sessions, real-time cursors)
+
+Files are huge (medical images, Word docs, PDFs)
+
+Use Time-Series DB (InfluxDB, ClickHouse) when:
+Every second matters (stock ticks, heart rate monitors, IoT sensors)
+
+Use Graph DB (Neo4j) when:
+Relationships ARE the data (fraud rings, social networks, recommendation engines)
+
+Use Object Storage (S3, MinIO) when:
+Files > 10MB (images, videos, documents, PDFs)
+
+Real-World Hybrid Examples (Most Common)
+text
+AMAZON (Ecommerce):
+- Product Catalog -> NoSQL (DynamoDB)
+- Order Checkout -> SQL (PostgreSQL)
+- Shopping Cart -> NoSQL (Redis)
+- Search -> Elasticsearch
+- Recommendations -> Graph (Neo4j)
+
+BANK OF AMERICA (Fintech):
+- Account Ledger -> SQL (Oracle, ACID mandatory)
+- Fraud Detection -> Graph (Neo4j)
+- Real-time Balances -> In-Memory (Redis)
+- Transaction History -> Time-Series (ClickHouse)
+
+ADOBE (Creative Cloud):
+- File Storage -> Object Store (AWS S3)
+- File Metadata -> SQL (PostgreSQL)
+- Real-time Collaboration -> NoSQL (DynamoDB/Redis)
+- License Management -> SQL (PostgreSQL)
+
+HOSPITAL (Healthcare):
+- Patient EMR -> SQL (PostgreSQL)
+- Medical Images -> Object Store (S3/MinIO)
+- ICU Monitoring -> Time-Series (InfluxDB)
+- Appointment Scheduling -> SQL (PostgreSQL)
+Final Advice: No single database rules them all. In microservices, trading, and large ecommerce, you will use 3-5 different databases in one system. The skill is knowing which database for which job (polyglot persistence).
+
